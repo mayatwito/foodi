@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>FOODI - חיפוש מסעדה</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- CSS ראשי -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css', v=6) }}">
+</head>
+
+<body>
+
+  <!-- לוגו -->
+  <div class="logo-wrapper">
+    <img src="{{ url_for('static', filename='foodi-logo.png') }}" alt="FOODI Logo">
+  </div>
+
+  <div class="tagline">מסעדות מומלצות במרחק קליק!</div>
+
+  <div class="container">
+    <h1>חיפוש מסעדה לפי מיקום</h1>
+
+    <!-- טופס חיפוש -->
+    <form id="searchForm" action="/find" method="get">
+
+      <div class="gps-row">
+        <div>
+          <label>שם פרטי:</label>
+          <input type="text" name="first_name" required>
+        </div>
+
+        <div>
+          <label>שם משפחה:</label>
+          <input type="text" name="last_name" required>
+        </div>
+      </div>
+
+      <div class="gps-row">
+        <div>
+          <label>טלפון:</label>
+          <input type="tel" name="phone" maxlength="10" required>
+        </div>
+
+        <div>
+          <label>כמות סועדים:</label>
+          <input type="number" name="guests" min="1" max="20" required>
+        </div>
+      </div>
+
+      <!-- סוג אוכל – autocomplete -->
+      <div class="form-group">
+        <label>סוג אוכל:</label>
+
+        <div class="autocomplete-wrapper">
+          <input
+            type="text"
+            name="food_type"
+            class="autocomplete-input"
+            placeholder="התחיל להקליד או בחר מהרשימה"
+            autocomplete="off"
+            data-items='[
+              "איטלקי",
+              "אסיאתי",
+              "בשרים",
+              "המבורגר",
+              "מזרחי",
+              "חלבי",
+              "בר-מסעדה"
+            ]'
+            required
+          >
+          <span class="autocomplete-arrow">▾</span>
+          <ul class="autocomplete-list"></ul>
+        </div>
+
+        <small class="autocomplete-hint">
+          ניתן לבחור מהרשימה או להקליד סוג אוכל
+        </small>
+      </div>
+
+      <!-- GPS -->
+      <label>מיקום (GPS):</label>
+      <div class="gps-row">
+        <input type="text" id="lat" name="lat" placeholder="קו רוחב" readonly required>
+        <input type="text" id="lon" name="lon" placeholder="קו אורך" readonly required>
+      </div>
+
+      <button type="button" id="locationBtn" onclick="getLocation()">📍 אתר אותי</button>
+      <button type="submit" class="btn-main">🔍 חפש מסעדה</button>
+    </form>
+
+    <hr>
+
+    <!-- ===== כפתורי פעולה (במקום קישורים) ===== -->
+    <div class="action-buttons">
+      <a href="/results" class="action-btn">🧭 תוצאות לידך (חיזוי עומסים)</a>
+      <a href="/report" class="action-btn secondary">📣 דווח על עומס במסעדה</a>
+    </div>
+  </div>
+
+  <!-- ===== JS GPS ===== -->
+  <script>
+    function getLocation() {
+      if (!navigator.geolocation) {
+        alert("הדפדפן לא תומך ב־GPS");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          document.getElementById("lat").value = pos.coords.latitude.toFixed(6);
+          document.getElementById("lon").value = pos.coords.longitude.toFixed(6);
+        },
+        () => alert("יש לאפשר גישה ל־GPS")
+      );
+    }
+  </script>
+
+  <!-- ===== JS Autocomplete ===== -->
+  <script>
+    document.querySelectorAll(".autocomplete-input").forEach(input => {
+      const wrapper = input.closest(".autocomplete-wrapper");
+      const list = wrapper.querySelector(".autocomplete-list");
+      const items = JSON.parse(input.dataset.items);
+
+      function render(matches) {
+        list.innerHTML = "";
+        matches.forEach(text => {
+          const li = document.createElement("li");
+          li.textContent = text;
+          li.onclick = () => {
+            input.value = text;
+            list.style.display = "none";
+          };
+          list.appendChild(li);
+        });
+        list.style.display = matches.length ? "block" : "none";
+      }
+
+      input.addEventListener("focus", () => render(items));
+
+      input.addEventListener("input", () => {
+        const v = input.value.trim();
+        render(v ? items.filter(i => i.startsWith(v)) : items);
+      });
+
+      document.addEventListener("click", e => {
+        if (!wrapper.contains(e.target)) {
+          list.style.display = "none";
+        }
+      });
+    });
+  </script>
+
+</body>
+</html>
